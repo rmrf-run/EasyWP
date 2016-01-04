@@ -1,4 +1,4 @@
-### Easy WP
+## Easy WP
 Created to easily install WordPress on VPS running CentOS 7.x, with php 7, mysql 5.6, and Nginx. The default settings will install Lets Encrypt SSL cert to the domain (currently not working with CloudFlare, turn off CloudFlare for now), and update Nginx conf file automatically. EasyWP (ewp) will also correctly set the permissions and SELinux configuration on the domain folder. If a cache is needed ewp will install a redis cache if the option is specified during install, see below for working code. Please do not use this repo for production servers/sites.
 
 * centos 7
@@ -8,8 +8,7 @@ Created to easily install WordPress on VPS running CentOS 7.x, with php 7, mysql
 * wpcli
 * LetsEncrypt SSL by default
 
-### Items still todo
-#### This is still work in progress
+## Items still todo
 
 * Lets Encrypt cert renewal
 * Site removal, disable, and re enable
@@ -17,7 +16,7 @@ Created to easily install WordPress on VPS running CentOS 7.x, with php 7, mysql
 * Add ability to create non-ssl WordPress site
 
 
-#### Install
+## Install
 
 ```
 git clone https://github.com/mylivingweb/EasyWP.git
@@ -25,7 +24,7 @@ cd EasyWP
 ./install.sh
 ```
 
-#### Using
+## Using
 
 ```
 ewp site create domain.tld
