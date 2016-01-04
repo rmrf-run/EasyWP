@@ -1,0 +1,621 @@
+#!/bin/bash
+# Make Variables Available For Later Use
+LOGDIR=/var/log/easywp
+ERRORLOG=/var/log/easywp/error.log
+INSTALLLOG=/var/log/easywp/install.log
+LINUX_DISTRO=$(lsb_release -i |awk '{print $3}')
+
+# Main Easy WP Function To Log All The Outputs
+EasyWP()
+{
+
+# Add TimeStamps In Install Log File
+echo &>> $INSTALLLOG
+echo -e "\033[36mEasy WP(ewp) Execution Started [$(date)]\e[0m" &>> $INSTALLLOG
+echo -e "\033[36mEasy WOP(ewp) Command: $0 $@\e[0m" &>> $INSTALLLOG
+
+
+# Capture Errors
+OwnError()
+{
+	echo -e "[ `date` ] \033[31m $@ \e[0m" | tee -ai $ERRORLOG
+	exit 101
+}
+#####FUN FUNCTIONS
+EEINFO()
+{
+	# Nginx Information
+	NGINXVER=$(nginx -v 2>&1 | cut -d':' -f2 | cut -d' ' -f2)
+	NGINXUSER=$(grep ^user /etc/nginx/nginx.conf | cut -d' ' -f2 | cut -d';' -f1)
+	NGINXPROCESSES=$(grep worker_processes /etc/nginx/nginx.conf | cut -d' ' -f2 | cut -d';' -f1)
+	NGINXCONNECTIONS=$(grep worker_connections /etc/nginx/nginx.conf | cut -d' ' -f2 | cut -d';' -f1)
+	NGINXKEEPALIVE=$(grep keepalive_timeout /etc/nginx/nginx.conf | cut -d' ' -f2 | cut -d';' -f1)
+	FASTCGITIMEOUT=$(grep fastcgi_read_timeout /etc/nginx/nginx.conf | cut -d' ' -f2 | cut -d';' -f1)
+	CLIENTMAXBODYSIZE=$(grep client_max_body_size /etc/nginx/nginx.conf | cut -d' ' -f2 | cut -d';' -f1)
+	NGINXALLOWEDIPADD=$(grep ^allow /etc/nginx/common/acl.conf | cut -d' ' -f2 | cut -d';' -f1 | tr '\n' ' ')
+
+	echo -e "\033[36mNginx ($NGINXVER) Information:\n\e[0m"
+	echo -e "\033[36mNginx User:\t\t\t \033[37m$NGINXUSER\e[0m"
+	echo -e "\033[36mNginx worker_processes:\t\t \033[37m$NGINXPROCESSES\e[0m"
+	echo -e "\033[36mNginx worker_connections:\t \033[37m$NGINXCONNECTIONS\e[0m"
+	echo -e "\033[36mNginx keepalive_timeout:\t \033[37m$NGINXKEEPALIVE\e[0m"
+	echo -e "\033[36mNginx fastcgi_read_timeout:\t \033[37m$FASTCGITIMEOUT\e[0m"
+	echo -e "\033[36mNginx client_max_body_size:\t \033[37m$CLIENTMAXBODYSIZE\e[0m"
+	echo -e "\033[36mNginx Allowed IP Address:\t \033[37m$NGINXALLOWEDIPADD\e[0m"
+
+	# PHP Information
+	# Collect Information From php.ini
+	PHPVER=$(php -v | head -n1 | cut -d' ' -f2 | cut -d'+' -f1)
+	PHPMEM=$(grep ^memory_limit /etc/php.ini | awk '{print $3}')
+	PHPEXPOSE=$(grep ^expose_php /etc/php.ini | cut -d'=' -f2 | cut -d' ' -f2)
+	PHPPOSTMAXSIZE=$(grep post_max_size /etc/php.ini | cut -d'=' -f2 | cut -d' ' -f2)
+	PHPUPLOADMAXFSIZE=$(grep upload_max_filesize /etc/php.ini | cut -d'=' -f2 | cut -d' ' -f2)
+	PHPMAXEXECUTIONTIME=$(grep max_execution_time /etc/php.ini | cut -d'=' -f2 | cut -d' ' -f2)
+
+	# Collect Information From www.conf
+	PHPPINGPATH=$(grep ^ping.path /etc/php-fpm.d/www.conf | cut -d'=' -f2| cut -d' ' -f2)
+	PHPSTATUSPATH=$(grep ^pm.status_path /etc/php-fpm.d/www.conf | cut -d'=' -f2| cut -d' ' -f2)
+	PHPFPMPROCESS=$(grep "^pm =" /etc/php-fpm.d/www.conf | awk '{print $3}')
+	PMMAXREQUEST=$(grep ^pm.max_requests /etc/php-fpm.d/www.conf | cut -d'=' -f2| cut -d' ' -f2)
+	PMMAXCHILDREN=$(grep ^pm.max_children /etc/php-fpm.d/www.conf | cut -d'=' -f2| cut -d' ' -f2)
+	PMSTARTSERVERS=$(grep ^pm.start_servers /etc/php-fpm.d/www.conf | cut -d'=' -f2| cut -d' ' -f2)
+	PMMINSPARESERVERS=$(grep ^pm.min_spare_servers /etc/php-fpm.d/www.conf | cut -d'=' -f2| cut -d' ' -f2)
+	PMMAXSPARESERVERS=$(grep ^pm.max_spare_servers /etc/php-fpm.d/www.conf | cut -d'=' -f2| cut -d' ' -f2)
+	PHPREQUESTTERMINATE=$(grep ^request_terminate_timeout /etc/php-fpm.d/www.conf | cut -d'=' -f2| cut -d' ' -f2)
+	PHPFASTCGIREQUEST=$(grep ^listen /etc/php-fpm.d/www.conf | cut -d'=' -f2| cut -d' ' -f2)
+
+	echo -e "\033[36m\n\nPHP ($PHPVER) Information:\n\e[0m"
+	echo -e "\033[36mPHP expose_php:\t\t\t \033[37m$PHPEXPOSE\e[0m"
+	echo -e "\033[36mPHP memory_limit:\t\t \033[37m$PHPMEM\e[0m"
+	echo -e "\033[36mPHP post_max_size:\t\t \033[37m$PHPPOSTMAXSIZE\e[0m"
+	echo -e "\033[36mPHP upload_max_filesize:\t \033[37m$PHPUPLOADMAXFSIZE\e[0m"
+	echo -e "\033[36mPHP max_execution_time:\t\t \033[37m$PHPMAXEXECUTIONTIME\n\e[0m"
+
+	echo -e "\033[36mPHP ping.path:\t\t\t \033[37m$PHPPINGPATH\e[0m"
+	echo -e "\033[36mPHP pm.status_path:\t\t \033[37m$PHPSTATUSPATH\e[0m"
+	echo -e "\033[36mPHP process manager:\t\t \033[37m$PHPFPMPROCESS\e[0m"
+	echo -e "\033[36mPHP pm.max_requests:\t\t \033[37m$PMMAXREQUEST\e[0m"
+	echo -e "\033[36mPHP pm.max_children:\t\t \033[37m$PMMAXCHILDREN\e[0m"
+	echo -e "\033[36mPHP pm.start_servers:\t\t \033[37m$PMSTARTSERVERS\e[0m"
+	echo -e "\033[36mPHP pm.min_spare_servers:\t \033[37m$PMMINSPARESERVERS\e[0m"
+	echo -e "\033[36mPHP pm.max_spare_servers:\t \033[37m$PMMAXSPARESERVERS\e[0m"
+	echo -e "\033[36mPHP request_terminate_timeout:\t \033[37m$PHPREQUESTTERMINATE\e[0m"
+	echo -e "\033[36mPHP Fastcgi Listen:\t\t \033[37m$PHPFASTCGIREQUEST\e[0m"
+
+	# MySQL Information
+	MYSQLVER=$(mysql -V | awk '{print($5)}' | cut -d ',' -f1)
+	echo -e "\033[36m\n\nMySQL ($MYSQLVER) Information:\n\e[0m"
+	
+
+}
+
+EESITEINFO()
+{
+	# Display The Specific Site Configuration
+	SITESTATUS=$(ls /etc/nginx/conf.d/$DOMAIN.conf &> /dev/null && echo Enable || echo Disable)
+	SITEINFO=$(head -n1 /etc/nginx/conf.d/$DOMAIN.conf | grep "NGINX CONFIGURATION" | rev | cut -d' ' -f3,4,5,6,7 | rev | cut -d ' ' -f2,3,4,5)
+	ACCESSLOG=$(grep access_log /etc/nginx/conf.d/$DOMAIN.conf | grep "/var/log/nginx/" | awk '{print($2)}' | cut -d ';' -f1)
+	ERRORLOG=$(grep error_log /etc/nginx/conf.d/$DOMAIN.conf | grep "/var/log/nginx/" | awk '{print($2)}' | cut -d ';' -f1)
+	WEBROOT=$(grep root /etc/nginx/conf.d/$DOMAIN.conf | grep htdocs | awk '{print($2)}'  | cut -d ';' -f1)
+	WPDBNAME=$(grep DB_NAME /var/www/$DOMAIN/wp-config.php 2> /dev/null | cut -d"'" -f4)
+
+	echo -e "\033[36m$DOMAIN Information:\n\e[0m"
+	echo -e "\033[36mNginx Configuration:\t\t \033[37m$SITEINFO ($SITESTATUS)\e[0m"
+	echo -e "\033[36mNginx access_log:\t\t \033[37m$ACCESSLOG\e[0m"
+	echo -e "\033[36mNginx error_log:\t\t \033[37m$ERRORLOG\e[0m"
+	echo -e "\033[36mNginx root:\t\t\t \033[37m$WEBROOT\e[0m"
+	echo -e "\033[36m$DOMAIN Database:\t\t \033[37m$WPDBNAME\e[0m"
+}
+
+
+
+
+
+EESITENAME()
+{
+	# Check SITENAME Is Empty Or Not
+	if [ -z "$SITENAMECHECK" ]
+	then
+		# Ask Users To Enter Domain Name
+		read -p "Enter Domain Name: " SITENAMECHECK
+		# Remove http://  https:// & www.
+		DOMAIN=$(echo $SITENAMECHECK | tr 'A-Z' 'a-z' |  sed "s'http://''" | sed "s'https://''" | sed "s'www.''" | sed "s'/''")
+	else
+		# Remove http://  https:// & www.
+		DOMAIN=$(echo $SITENAMECHECK | tr 'A-Z' 'a-z' |  sed "s'http://''" | sed "s'https://''" | sed "s'www.''" | sed "s'/''")
+	fi
+
+	# Remove http://  https:// For WordPress Setup (www.example.com)
+	WWWDOMAIN=$(echo $SITENAMECHECK | tr 'A-Z' 'a-z' |  sed "s'http://''" | sed "s'https://''" | sed "s'/''")
+}
+
+
+SETUPDOMAIN()
+{
+	# Check SITENAME Is Empty Or Not
+	EESITENAME
+
+	# Creating Website $DOMAIN
+	EEDOMAINSETUP
+
+	# Setup WordPress Webroot & Database
+	EEWPSETUP
+	EEWPDBSETUP
+}
+EEDOMAINSETUP()
+{
+	#Check The Nginx Configuration Exist For $DOMAIN
+	ls /etc/nginx/conf.d/$DOMAIN.conf &> $ERRORLOG
+
+	if [ $? -ne 0 ]
+	then
+		# Creating Website $DOMAIN
+		echo -e "\033[36mCreating $DOMAIN, Please Wait...\e[0m"
+		sed "s/example.com/$DOMAIN/g" \
+		/etc/easywp/nginx/conf/wp/basic.conf \
+		> /etc/nginx/conf.d/$DOMAIN.conf \
+		|| OwnError "Unable To Create Nginx Configuration File For $DOMAIN"
+
+		# Creating Htdocs & Logs Directory
+		echo -e "\033[36mCreating htdocs & logs Directory\e[0m"
+		mkdir -p /var/www/$DOMAIN/htdocs \
+		|| OwnError "Unable To Create htdocs & logs Directory"
+                #LetsEncrypt
+                echo -e "\033[36mLets get some nice and shiny new SSL Certs for free from Lets Encrypt, ssl certs for $DOMAIN. We will stop Nginx for a few seconds to authorize\e[0m": 
+                systemctl stop nginx
+                /etc/letsencrypt/letsencrypt-auto certonly --standalone -d $DOMAIN -d www.$DOMAIN
+                systemctl restart nginx
+        else
+		OwnError "$DOMAIN Already Exist"
+	fi
+        
+        #FOR TESTING LETS ADD NOSSL CONF FILE IN
+        
+}
+EEDOMAINSSLRENEW()
+{
+    echo -e "\033[36mRenewing ssl cert, Please Wait...\e[0m"
+    /etc/letsencrypt/letsencrypt-auto certonly -a webroot --webroot-path /var/www/$DOMAIN/htdocs -d $DOMAIN
+
+    if [ $? -ne 0 ]
+     then
+            ERRORLOG=`tail /var/log/letsencrypt/letsencrypt.log`
+            OwnError "The Lets Encrypt Cert has not been renewed for domain" $DOMAIN
+     else
+            systemctl restart nginx
+    fi
+    
+    
+}
+EEDOMAINSETUPNOSSL()
+{
+	#Check The Nginx Configuration Exist For $DOMAIN
+	ls /etc/nginx/conf.d/$DOMAIN.conf &> $ERRORLOG
+
+	if [ $? -ne 0 ]
+	then
+		# Creating Website $DOMAIN
+		echo -e "\033[36mCreating $DOMAIN, Please Wait...\e[0m"
+		sed "s/example.com/$DOMAIN/g" \
+		/etc/easywp/nginx/conf/wp/basic-nossl.conf \
+		> /etc/nginx/conf.d/$DOMAIN-nossl.conf \
+		|| OwnError "Unable To Create Nginx Configuration File For $DOMAIN"
+
+		# Creating Htdocs & Logs Directory
+		echo -e "\033[36mCreating htdocs & logs Directory\e[0m"
+		mkdir -p /var/www/$DOMAIN-nossl/htdocs \
+		|| OwnError "Unable To Create htdocs & logs Directory"
+	else
+		OwnError "$DOMAIN Already Exist"
+	fi
+}
+EEWPSETUP()
+{
+	# Download Latest WordPress
+	echo -e "\033[36mDownloading WordPress, Please Wait...\e[0m"
+	wget --no-check-certificate -cqO /var/www/$DOMAIN/htdocs/latest.tar.gz  \
+	http://wordpress.org/latest.tar.gz \
+	|| OwnError "Unable To Download WordPress"
+
+	# Extracting WordPress
+	tar --strip-components=1 -zxf /var/www/$DOMAIN/htdocs/latest.tar.gz \
+	-C /var/www/$DOMAIN/htdocs/ \
+	|| OwnError "Unable To Extract WordPress"
+
+	# Removing WordPress Archive
+	rm /var/www/$DOMAIN/htdocs/latest.tar.gz
+
+	# Call MYSQLINFO Function For MySQL Values
+	MYSQLINFO
+	EEWPDBPREFIX
+	EECREATEDATABASE
+
+	# Modify wp-config.php & Move Outside The Webroot
+	mv /var/www/$DOMAIN/htdocs/wp-config-sample.php \
+	/var/www/$DOMAIN/wp-config.php
+
+	sed -i "s/database_name_here/$WPDBNAME/" \
+	/var/www/$DOMAIN/wp-config.php
+
+	sed -i "s/username_here/$WPDBUSER/" \
+	/var/www/$DOMAIN/wp-config.php
+				
+	sed -i "s/password_here/$WPDBPASS/" \
+	/var/www/$DOMAIN/wp-config.php
+
+	sed -i "s/localhost/$MYSQLHOST/" \
+	/var/www/$DOMAIN/wp-config.php
+
+	sed -i "s/wp_/$WPDBPREFIX/" \
+	/var/www/$DOMAIN/wp-config.php
+
+	printf '%s\n' "g/put your unique phrase here/d" \
+	a "$(curl -sL https://api.wordpress.org/secret-key/1.1/salt/)" . w \
+	| ed -s /var/www/$DOMAIN/wp-config.php
+
+}
+EEWPDBSETUP()
+{
+	# Get WordPress Site Title
+	#echo -e "\033[36mWordPress Information Required...\e[0m"
+
+	# WordPress Default User: admin
+	
+	if [[ $WPADMINUSER = "" ]]
+	then
+		read -p "Enter admin account username (do not use admin or root): " WPADMINUSER
+			if [[ $WPADMINUSER = "admin"  ||  $WPADMINUSER = "root"  ||  $WPADMINUSER = "Admin"  ||  $WPADMINUSER = "Root" ]]
+				then
+					read -p "Enter admin account username (IT IS SUGGESTED TO NOT USE ADMIN OR ROOT): " WPADMINUSER
+				if [[ $WPADMINUSER = "admin"  ||  $WPADMINUSER = "root"  ||  $WPADMINUSER = "Admin"  ||  $WPADMINUSER = "Root" ]]
+				then
+					echo -e "\033[31mWe warned you...\e[0m"
+				fi
+			fi
+	fi
+
+	# WordPress Default Password: Random Password
+	if [[ $WPADMINPASS = "" ]]
+	then
+		WPADMINPASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 15 | head -n1)
+	fi
+	
+	# WordPress Default Email: `git config user.email`
+	 
+	if [[ $WPADMINEMAIL = "" ]]
+	then
+		read -p "Enter admin account email address: " WPADMINEMAIL
+		
+	fi
+
+	# Create WordPress Tables
+	echo -e "\033[36mSetting Up WordPress, Please Wait...\e[0m"
+	cd /var/www/$DOMAIN/htdocs || OwnError "Unable To Change Directory To Install WordPress"
+	wp core install --allow-root  --url=$WWWDOMAIN --title="$WWWDOMAIN" \
+	--admin_name=$WPADMINUSER --admin_password=$WPADMINPASS --admin_email=$WPADMINEMAIL &>> $INSTALLLOG \
+	|| OwnError "Unable To Create WordPress Tables For $DOMAIN"
+	
+	# Update WordPress Permalink Structure Day and Postname
+	echo -e "\033[36mUpdating WordPress Permalink, Please Wait...\e[0m"
+	wp rewrite structure --allow-root /%year%/%monthnum%/%day%/%postname%/ &>> $INSTALLLOG \
+	|| OwnError "Unable To Update WordPress Permalink For $DOMAIN"
+}
+MYSQLUSERPASS()
+{
+	read -p "Enter The MySQL Username [root]: " MYSQLUSER
+	# If Enter Is Pressed, Then Use root as MySQL User
+	if [[ $MYSQLUSER = "" ]]
+	then
+		MYSQLUSER=root
+	fi
+
+	# Turn Off Echo For Passwords
+	stty -echo
+	read -p "Enter The MySQL Password: " MYSQLPASS
+	stty echo
+	echo
+}
+
+
+MYSQLPASSCHECK()
+{
+	while [ -n $(mysqladmin -h $MYSQLHOST -u $MYSQLUSER -p$MYSQLPASS ping 2> /dev/null | grep alive) &> /dev/null ]
+	do
+        	MYSQLUSERPASS
+	done
+}
+MYSQLROOT()
+{
+	MYSQLUSER=$(cat ~/.my.cnf | grep user | cut -d'=' -f2)
+	MYSQLPASS=$(cat ~/.my.cnf | grep pass | cut -d'=' -f2 | sed -e 's/^"//'  -e 's/"$//')
+}
+MYSQLINFO()
+{
+	# Get The MySQL Host
+	 
+
+	# MySQL Default Host: localhost
+	if [[ $MYSQLHOST = "" ]]
+	then
+		MYSQLHOST=localhost
+	fi
+	
+	if [ -f ~/.my.cnf ]
+	then
+		MYSQLROOT
+	else
+		# Verify MySQL Credentials
+		MYSQLUSERPASS
+	fi
+
+	# Verify MySQL Credentials
+	MYSQLPASSCHECK
+
+	# Replace Dot With Underscore In $DOMAIN Name
+	REPLACEDOT=$(echo $DOMAIN | tr '.' '_')
+
+	# Check Use Default DB Name Or Custom DB Name
+	
+
+	if [ $? -eq 0 ]
+	then
+		read -p "Enter The MySQL Database Name [$REPLACEDOT]: " WPDBNAME
+	fi
+
+	# If customdbname = false 
+	# 		Then It Never Ask For MySQL Database Name In This Case $WPDBNAME Is Empty
+	# If customdbname = true
+	#		User Enter Custom Databse Name Then WPDBNAME Is Not Empty & We Used Provided Database Name
+ 	#		If User Pressed Enter Then $WPDBNAME Is Empty
+
+	if [[ $WPDBNAME = "" ]]
+	then
+		WPDBNAME=$REPLACEDOT
+	fi
+}
+
+EEWPDBPREFIX()
+{
+	# Get The WordPress Database Table Prefix
+	
+	
+	# Display WPDBPREFIX Valid Characters Warning & Try Again
+	while [ $(echo $WPDBPREFIX | grep  '[^[:alnum:] _]') ]
+	do
+		echo -e "\033[31mWarning: \033[36mTable Prefix Can Only Contain Numbers, Letters, And Underscores.\e[0m"
+		# For Proper read Command Output
+		stty echo
+		read -p "Enter The MySQL Database Table Prefix [nT_]: " WPDBPREFIX
+	done
+
+	# WordPress Database Table Prefix Default: wp_
+	if [[ $WPDBPREFIX = "" ]]
+	then
+		WPDBPREFIX=nT_
+	fi
+}
+EECREATEDATABASE()
+{
+	# Create Database
+	mysql -h $MYSQLHOST -u $MYSQLUSER -p$MYSQLPASS -e "create database \`$WPDBNAME\`" \
+	|| OwnError "Unable To Create $WPDBNAME Database"
+
+	# Check Use Default DB User Or Custom DB User
+	WPDBRANDOMPASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 15 | head -n1)
+	
+
+	if [ $? -eq 0 ]
+	then
+		read -p "Enter The MySQL Database Username [$REPLACEDOT]: " WPDBUSER
+
+		if [[ $WPDBUSER = "" ]]
+		then
+			WPDBUSER=$REPLACEDOT
+		fi
+
+		# Fix MySQL USER ERROR 1470 (HY000)
+		
+		
+		# Turn Off Echo For Passwords
+		stty -echo
+		read -p "Enter The MySQL Database Password [$WPDBRANDOMPASS]: " WPDBPASS
+		stty echo
+		echo
+	fi
+
+	if [[ $WPDBUSER = "" ]]
+	then
+		WPDBUSER=$REPLACEDOT
+		# Fix MySQL USER ERROR 1470 (HY000)
+		
+	fi
+
+	if [[ $WPDBPASS = "" ]]
+	then
+		WPDBPASS=$WPDBRANDOMPASS
+	fi
+
+	# Create Separate User & Grant Permission
+	echo -e "WPDBNAME = $WPDBNAME \nWPDBUSER = $WPDBUSER \nWPDBPASS = $WPDBPASS" &>> $INSTALLLOG
+	mysql -h $MYSQLHOST -u $MYSQLUSER -p$MYSQLPASS -e "create user '$WPDBUSER'@'$MYSQLHOST' identified by '$WPDBPASS'"
+	mysql -h $MYSQLHOST -u $MYSQLUSER -p$MYSQLPASS -e "grant all privileges on \`$WPDBNAME\`.* to '$WPDBUSER'@'$MYSQLHOST'"
+	mysql -h $MYSQLHOST -u $MYSQLUSER -p$MYSQLPASS -e "flush privileges"
+}
+
+
+
+
+EEPERMISSION()
+{
+	# Call PHPUSERINFO Function For PHP User Details
+	# Change Ownership
+	echo -e "\033[36mChanging Ownership\e[0m"
+	chown -R nginx:nginx /var/www/$DOMAIN/ || OwnError "Unable To Change Ownership For $DOMAIN"
+        #SeLinux, because why not have it all correct
+        echo -e "\033[36mChanging file context for Selinux so you can update, install, and plugins and core...Might take a min\e[0m"
+        semanage fcontext -a -t httpd_sys_rw_content_t "/var/www/$DOMAIN/htdocs/wp-content(/.*)?"
+        setsebool -P httpd_execmem 1
+        echo -e "\033[36mRunning Restorecon to add file context changes to table...This will take a min, check install log for details\e[0m"
+        restorecon -Rv /var/www/$DOMAIN/ echo &>> $INSTALLLOG
+	# Reload Nginx Configuration
+	systemctl reload nginx
+}
+HELPER()
+{
+	# Installing Nginx Helper
+	cd /var/www/$DOMAIN/htdocs/
+	echo -e "\033[36mInstalling Nginx Helper Plugin, Please Wait...\e[0m"
+	wp plugin --allow-root install nginx-helper &>> $INSTALLLOG || OwnError "Unable To Install Nginx Helper"
+	echo -e "\033[36mInstalling Wordfence Plugin, Please Wait...\e[0m"
+	wp plugin --allow-root install wordfence &>> $INSTALLLOG || OwnError "Unable To Install Wordfence"
+	echo -e "\033[36mInstalling EWWW Image Optimizer, Please Wait...\e[0m"
+	wp plugin --allow-root install ewww-image-optimizer &>> $INSTALLLOG || OwnError "Unable To Install EWWW Image Optimizer"
+	echo -e "\033[36mInstalling Jetpack, Please Wait...\e[0m"
+	wp plugin --allow-root install jetpack &>> $INSTALLLOG || OwnError "Unable To Install Jetpack"
+	echo -e "\033[36mInstalling Wordpress https, Please Wait...\e[0m"
+	wp plugin --allow-root install wordpress-https &>> $INSTALLLOG || OwnError "Unable To Install WordPress https"
+	# Activate Wordfence
+	wp plugin --allow-root activate wordfence $NETWORKACTIVATE &>> $INSTALLLOG || OwnError "Unable To Activate Wordfence Plugin"
+}
+REDISCACHE()
+{
+    #Copy files over to docroot
+    echo -e "\033[36mCopying predis.php and wp-index-redis.php, Please Wait...\e[0m"
+    cp /etc/easywp/redis/* /var/www/$DOMAIN/htdocs/
+    read -p "Are you using Cloudflare? (y or n): " CLOUDFLARE
+        if [[ $CLOUDFLARE = "y"  ||  $CLOUDFLARE = "Y"  ||  $CLOUDFLARE = "yes"  ||  $CLOUDFLARE = "Yes" ]]
+        then
+            sed -i "s/$cf = 0;/$cf = 1;/g" /var/www/$DOMAIN/htdocs/wp-index-redis.php
+        fi
+        
+    read -p "Do you want to enable debugging? This will load stats at bottom of the page... (y or n): " DEBUG
+        if [[ $DEBUG = "y"  ||  $DEBUG = "Y"  ||  $DEBUG = "yes"  ||  $DEBUG = "Yes" ]]
+        then
+            sed -i "s/$debug = 0;/$debug = 1;/g" /var/www/$DOMAIN/htdocs/wp-index-redis.php
+        fi
+    echo -e "\033[36mStarting up redis, Please Wait...\e[0m"
+    systemctl start redis
+    systemctl enable redis
+    echo -e "\033[36mReplacing index.php with wp-index-redis.php, Please Wait...\e[0m"
+    mv /var/www/$DOMAIN/htdocs/index.php /var/www/$DOMAIN/htdocs/without-redis-index.php
+    mv /var/www/$DOMAIN/htdocs/wp-index-redis.php /var/www/$DOMAIN/htdocs/index.php
+    echo -e "\033[36mSetting boolean to allow httpd to network connect to get redis cache working...\e[0m"
+    setsebool -P httpd_can_network_connect on
+}
+
+
+##START OUT WITH PASSED VARIABLES TO SCRIPT
+#Display Easy WP Version
+if [ "$1" = "version" ] || [ "$1" = "--version" ] || [ "$1" = "-v" ]
+then
+    # Display Easy WP Version
+    echo "easy wp version: .001a"
+# Easy WP Info
+elif [ "$1" = "info" ]
+then
+    # Get Nginx PHP & MySQL Information
+    EEINFO
+# Easy WP System Settings
+else [ "$1" = "site" ]
+    # Easy Engine Site Enabled List
+    if [ "$2" = "list" ]
+    then
+    	# Display The List Of Available Sites
+	echo -e "\033[36mDisplay The List Of Available Websites:\e[0m"
+	ls /etc/nginx/conf.d/ \
+	|| OwnError "Unable To Display The List Of Available Websites"
+    elif [ "$2" = "show" ]
+    then
+	# Check SITENAME Is Empty Or Not
+	SITENAMECHECK=$3
+	EESITENAME
+	# Check The Website Is Exist
+	ls /etc/nginx/conf.d/$DOMAIN.conf &> /dev/null || OwnError "The $DOMAIN Is Not Found In Available Websites List"
+		if [ $? -eq 0 ]
+		then
+		# Display The Specific Site Configuration
+		echo -e "\033[36mDisplay Nginx Configuration For $DOMAIN\e[0m"
+		cat /etc/nginx/conf.d/$DOMAIN.conf || OwnError "Unable To Display Nginx Configuration For $DOMAIN"
+    fi
+    elif [ "$2" = "create" ]
+    then
+    SITENAMECHECK=$3
+    #EESITECREATE=$4
+    WPCACHEOPTION=$4
+                #COMMENTING OUT INCASE WE WANT TO ADD MORE CMSES, FOR NOW ONLY WORDPRESS
+		# USE DEFAULT WHEN POSSIBLES
+		# ee site create example.com
+		#if [ "$EESITECREATE" = "" ]
+		#then
+		#	EESITECREATE=--wp
+		#fi
+		# If No Cache Specified Use --basic As Default On WordPress Sites
+		#if [ "$WPCACHEOPTION" = "" ] && [ "$WPCACHEOPTION" != "--redis" ]
+		#then
+		#	WPCACHEOPTION=--basic
+		#fi
+		#elif [ "$EESITECREATE" = "--wp" ]
+		#then
+	if [ "$WPCACHEOPTION" = "" ]
+	then
+        	# Configure Variable
+        	NGINXCONF=/etc/easywp/nginx/conf/wp/basic.conf
+        	echo -e "SITENAMECHECK = $SITENAMECHECK \nEESITECREATE = $EESITECREATE \nWPCACHEOPTION = $WPCACHEOPTION \nNETWORKACTIVATE = $NETWORKACTIVATE \nWPSUBDOMAINS = $WPSUBDOMAINS \nNGINXCONF = $NGINXCONF" &>> $INSTALLLOG
+        	# Setup Basic Nginx
+		SETUPDOMAIN
+		HELPER
+		EEPERMISSION
+		# Display Success Message
+		echo
+		echo -e "\033[37mWordPress Admin Username: $WPADMINUSER\e[0m"
+		echo -e "\033[37mWordPress Admin Password: $WPADMINPASS\e[0m"
+		echo -e "\033[37mSuccessfully Created New Website: https://$DOMAIN\e[0m"
+                echo -e "\033[37mA copy of this info is located one level up from htdocs in $DOMAIN.info\e[0m"
+                echo "WordPress Admin Username: $WPADMINUSER \n WordPress Admin Password: $WPADMINPASS \nSuccessfully Created New Website: https://$WWWDOMAIN \n Login at https://$WWWDOMAIN/wp-admin " >> /var/www/$DOMAIN/$DOMAIN.info
+	else [ "$WPCACHEOPTION" = "--redis" ] #REVIST TO INSTALL REDIS CACHING
+               	# Configure Variable
+        	NGINXCONF=/etc/easywp/nginx/wp/basic.conf
+		echo -e "SITENAMECHECK = $SITENAMECHECK \nEESITECREATE = $EESITECREATE \nWPCACHEOPTION = $WPCACHEOPTION \nNETWORKACTIVATE = $NETWORKACTIVATE \nWPSUBDOMAINS = $WPSUBDOMAINS \nNGINXCONF = $NGINXCONF" &>> $INSTALLLOG
+		# Setup Redis Cache Nginx
+		SETUPDOMAIN
+		HELPER
+		REDISCACHEs
+		EEPERMISSION
+		# Display WordPress Plugin Configuration Message
+		echo
+		echo -e "\033[37mWordPress Admin Username: $WPADMINUSER\e[0m"
+		echo -e "\033[37mWordPress Admin Password: $WPADMINPASS\e[0m"
+		echo
+		echo -e "\033[36mPlease Configure The Following Settings...\e[0m"
+		#echo -e "\033[36mPermalink Settings: http://$DOMAIN/wp-admin/options-permalink.php\e[0m"
+		echo -e "\033[36mW3 Total Cache: http://$DOMAIN/wp-admin/admin.php?page=w3tc_general\e[0m"
+		# Display Success Message
+		echo
+		echo -e "\033[37mSuccessfully Created New Website: http://$WWWDOMAIN\e[0m"
+	fi
+    fi
+fi
+#	elif [ "$2" = "enable" ]
+#       then
+#
+#		# Check SITENAME Is Empty Or Not
+#		SITENAMECHECK=$3
+#		EESITENAME
+#	    mv /usr/share/easyengine/disabled-sites/$DOMAIN.conf /etc/nginx/conf.d/$DOMAIN.conf || OwnError "Unable To move conf file For $DOMAIN"
+#		# Reload Nginx Configuration
+#		NGINXRELOAD
+#
+#	else [ "$2" = "disable" ]
+#		# Check SITENAME Is Empty Or Not
+#		SITENAMECHECK=$3
+#		EESITENAME
+#
+#		echo -e "\033[36mRemoving conf file $DOMAIN\e[0m"
+#		mv /etc/nginx/conf.d/$DOMAIN.conf /usr/share/easyengine/disabled-sites/$DOMAIN.conf	|| OwnError "Unable To Move conf file For $DOMAIN"
+#
+#		# Reload Nginx Configuration
+#		NGINXRELOAD
+ #   fi
+}
+
+EasyWP $@ | tee -ai $INSTALLLOG
