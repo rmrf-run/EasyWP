@@ -662,6 +662,7 @@ else [ "$1" = "site" ]
 #		# Reload Nginx Configuration
 		systemctl restart nginx
    fi
+fi
 }
 
 EasyWP $@ | tee -ai $INSTALLLOG
