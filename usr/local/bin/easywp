@@ -248,8 +248,10 @@ EEWPSETUP()
 
 	sed -i "s/wp_/$WPDBPREFIX/" \
 	/var/www/$DOMAIN/wp-config.php
-
-	printf '%s\n' "g/put your unique phrase here/d" \
+        
+        sed -i "/define('WP_DEBUG', false);/a define('FORCE_SSL_ADMIN', true );" /var/www/$DOMAIN/wp-config.php
+        
+        printf '%s\n' "g/put your unique phrase here/d" \
 	a "$(curl -sL https://api.wordpress.org/secret-key/1.1/salt/)" . w \
 	| ed -s /var/www/$DOMAIN/wp-config.php
 
@@ -291,7 +293,53 @@ EEWPDBSETUP()
 	# Create WordPress Tables
 	echo -e "\033[36mSetting Up WordPress, Please Wait...\e[0m"
 	cd /var/www/$DOMAIN/htdocs || OwnError "Unable To Change Directory To Install WordPress"
-	wp core install --allow-root  --url=$WWWDOMAIN --title="$WWWDOMAIN" \
+	wp core install --allow-root  --url=https://$WWWDOMAIN --title="$WWWDOMAIN from Easy WP" \
+	--admin_name=$WPADMINUSER --admin_password=$WPADMINPASS --admin_email=$WPADMINEMAIL &>> $INSTALLLOG \
+	|| OwnError "Unable To Create WordPress Tables For $DOMAIN"
+	
+	# Update WordPress Permalink Structure Day and Postname
+	echo -e "\033[36mUpdating WordPress Permalink, Please Wait...\e[0m"
+	wp rewrite structure --allow-root /%year%/%monthnum%/%day%/%postname%/ &>> $INSTALLLOG \
+	|| OwnError "Unable To Update WordPress Permalink For $DOMAIN"
+}
+EEWPDBSETUPNOSSL()
+{
+	# Get WordPress Site Title
+	#echo -e "\033[36mWordPress Information Required...\e[0m"
+
+	# WordPress Default User: admin
+	
+	if [[ $WPADMINUSER = "" ]]
+	then
+		read -p "Enter admin account username (do not use admin or root): " WPADMINUSER
+			if [[ $WPADMINUSER = "admin"  ||  $WPADMINUSER = "root"  ||  $WPADMINUSER = "Admin"  ||  $WPADMINUSER = "Root" ]]
+				then
+					read -p "Enter admin account username (IT IS SUGGESTED TO NOT USE ADMIN OR ROOT): " WPADMINUSER
+				if [[ $WPADMINUSER = "admin"  ||  $WPADMINUSER = "root"  ||  $WPADMINUSER = "Admin"  ||  $WPADMINUSER = "Root" ]]
+				then
+					echo -e "\033[31mWe warned you...\e[0m"
+				fi
+			fi
+	fi
+
+	# WordPress Default Password: Random Password
+	if [[ $WPADMINPASS = "" ]]
+	then
+		WPADMINPASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 15 | head -n1)
+	fi
+	
+	# WordPress Default Email: `git config user.email`
+	 
+	if [[ $WPADMINEMAIL = "" ]]
+	then
+		read -p "Enter admin account email address: " WPADMINEMAIL
+		
+	fi
+
+	# Create WordPress Tables
+	echo -e "\033[36mSetting Up WordPress, Please Wait...\e[0m"
+	cd /var/www/$DOMAIN/htdocs || OwnError "Unable To Change Directory To Install WordPress"
+	wp core install --allow-root  --url=$WWWDOMAIN --title="$WWWDOMAIN from Easy WP" \
 	--admin_name=$WPADMINUSER --admin_password=$WPADMINPASS --admin_email=$WPADMINEMAIL &>> $INSTALLLOG \
 	|| OwnError "Unable To Create WordPress Tables For $DOMAIN"
 	
