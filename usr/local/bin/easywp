@@ -142,6 +142,18 @@ SETUPDOMAIN()
 	EEWPSETUP
 	EEWPDBSETUP
 }
+SETUPDOMAINNOSSL()
+{
+	# Check SITENAME Is Empty Or Not
+	EESITENAME
+
+	# Creating Website $DOMAIN
+	EEDOMAINSETUPNOSSL
+
+	# Setup WordPress Webroot & Database
+	EEWPSETUPNOSSL
+	EEWPDBSETUP
+}
 EEDOMAINSETUP()
 {
 	#Check The Nginx Configuration Exist For $DOMAIN
@@ -256,6 +268,51 @@ EEWPSETUP()
 	| ed -s /var/www/$DOMAIN/wp-config.php
 
 }
+EEWPSETUPNOSSL()
+{
+	# Download Latest WordPress
+	echo -e "\033[36mDownloading WordPress, Please Wait...\e[0m"
+	wget --no-check-certificate -cqO /var/www/$DOMAIN/htdocs/latest.tar.gz  \
+	http://wordpress.org/latest.tar.gz \
+	|| OwnError "Unable To Download WordPress"
+
+	# Extracting WordPress
+	tar --strip-components=1 -zxf /var/www/$DOMAIN/htdocs/latest.tar.gz \
+	-C /var/www/$DOMAIN/htdocs/ \
+	|| OwnError "Unable To Extract WordPress"
+
+	# Removing WordPress Archive
+	rm /var/www/$DOMAIN/htdocs/latest.tar.gz
+
+	# Call MYSQLINFO Function For MySQL Values
+	MYSQLINFO
+	EEWPDBPREFIX
+	EECREATEDATABASE
+
+	# Modify wp-config.php & Move Outside The Webroot
+	mv /var/www/$DOMAIN/htdocs/wp-config-sample.php \
+	/var/www/$DOMAIN/wp-config.php
+
+	sed -i "s/database_name_here/$WPDBNAME/" \
+	/var/www/$DOMAIN/wp-config.php
+
+	sed -i "s/username_here/$WPDBUSER/" \
+	/var/www/$DOMAIN/wp-config.php
+				
+	sed -i "s/password_here/$WPDBPASS/" \
+	/var/www/$DOMAIN/wp-config.php
+
+	sed -i "s/localhost/$MYSQLHOST/" \
+	/var/www/$DOMAIN/wp-config.php
+
+	sed -i "s/wp_/$WPDBPREFIX/" \
+	/var/www/$DOMAIN/wp-config.php
+        
+        printf '%s\n' "g/put your unique phrase here/d" \
+	a "$(curl -sL https://api.wordpress.org/secret-key/1.1/salt/)" . w \
+	| ed -s /var/www/$DOMAIN/wp-config.php
+
+}
 EEWPDBSETUP()
 {
 	# Get WordPress Site Title
@@ -302,6 +359,7 @@ EEWPDBSETUP()
 	wp rewrite structure --allow-root /%year%/%monthnum%/%day%/%postname%/ &>> $INSTALLLOG \
 	|| OwnError "Unable To Update WordPress Permalink For $DOMAIN"
 }
+
 EEWPDBSETUPNOSSL()
 {
 	# Get WordPress Site Title
@@ -590,6 +648,7 @@ else [ "$1" = "site" ]
     SITENAMECHECK=$3
     #EESITECREATE=$4
     WPCACHEOPTION=$4
+    NOSSL=$5
                 #COMMENTING OUT INCASE WE WANT TO ADD MORE CMSES, FOR NOW ONLY WORDPRESS
 		# USE DEFAULT WHEN POSSIBLES
 		# ee site create example.com
@@ -620,14 +679,14 @@ else [ "$1" = "site" ]
 		echo -e "\033[37mSuccessfully Created New Website: https://$DOMAIN\e[0m"
                 echo -e "\033[37mA copy of this info is located one level up from htdocs in $DOMAIN.info\e[0m"
                 echo -e "WordPress Admin Username: $WPADMINUSER \nWordPress Admin Password: $WPADMINPASS \nSuccessfully Created New Website: https://$WWWDOMAIN \nLogin at https://$WWWDOMAIN/wp-admin " >> /var/www/$DOMAIN/$DOMAIN.info
-	else [ "$WPCACHEOPTION" = "--redis" ] #REVIST TO INSTALL REDIS CACHING
-               	# Configure Variable
+	elif [ "$WPCACHEOPTION" = "--redis" ] #REVIST TO INSTALL REDIS CACHING
+        then       	# Configure Variable
         	NGINXCONF=/etc/easywp/nginx/wp/basic.conf
 		echo -e "SITENAMECHECK = $SITENAMECHECK \nEESITECREATE = $EESITECREATE \nWPCACHEOPTION = $WPCACHEOPTION \nNETWORKACTIVATE = $NETWORKACTIVATE \nWPSUBDOMAINS = $WPSUBDOMAINS \nNGINXCONF = $NGINXCONF" &>> $INSTALLLOG
 		# Setup Redis Cache Nginx
 		SETUPDOMAIN
 		HELPER
-		REDISCACHEs
+		REDISCACHE
 		EEPERMISSION
 		# Display WordPress Plugin Configuration Message
 		echo
@@ -640,6 +699,23 @@ else [ "$1" = "site" ]
 		# Display Success Message
 		echo
 		echo -e "\033[37mSuccessfully Created New Website: http://$WWWDOMAIN\e[0m"
+        elif [ "$NOSSL" = "--nossl" ] || [ "$NOSSL" = "--no-ssl" ]
+	then
+        	# Configure Variable
+        	NGINXCONF=/etc/easywp/nginx/conf/wp/basic.conf
+        	echo -e "SITENAMECHECK = $SITENAMECHECK \nEESITECREATE = $EESITECREATE \nWPCACHEOPTION = $WPCACHEOPTION \nNETWORKACTIVATE = $NETWORKACTIVATE \nWPSUBDOMAINS = $WPSUBDOMAINS \nNGINXCONF = $NGINXCONF" &>> $INSTALLLOG
+        	# Setup Basic Nginx
+		SETUPDOMAINNOSSL
+		HELPER
+		EEPERMISSION
+		# Display Success Message
+		echo
+		echo -e "\033[37mWordPress Admin Username: $WPADMINUSER\e[0m"
+		echo -e "\033[37mWordPress Admin Password: $WPADMINPASS\e[0m"
+		echo -e "\033[37mSuccessfully Created New Website: https://$DOMAIN\e[0m"
+                echo -e "\033[37mA copy of this info is located one level up from htdocs in $DOMAIN.info\e[0m"
+                echo -e "WordPress Admin Username: $WPADMINUSER \nWordPress Admin Password: $WPADMINPASS \nSuccessfully Created New Website: http://$WWWDOMAIN \nLogin at http://$WWWDOMAIN/wp-admin " >> /var/www/$DOMAIN/$DOMAIN.info
+
 	fi
     elif [ "$2" = "enable" ]
        then
