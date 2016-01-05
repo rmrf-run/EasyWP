@@ -4,10 +4,10 @@ Created to easily install WordPress on VPS running CentOS 7.x, with php 7, mysql
 * centos 7
 * php 7
 * mysql 5.6
-* nginx
+* nginx 1.9.9
 * wpcli
 * LetsEncrypt SSL by default
-
+* http2
 ## Items still todo
 
 * Lets Encrypt cert renewal
