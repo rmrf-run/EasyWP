@@ -641,8 +641,6 @@ else [ "$1" = "site" ]
 		echo
 		echo -e "\033[37mSuccessfully Created New Website: http://$WWWDOMAIN\e[0m"
 	fi
-    fi
-fi
     elif [ "$2" = "enable" ]
        then
 

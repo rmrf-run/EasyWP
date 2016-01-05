@@ -162,7 +162,7 @@ then
 	cp usr/local/bin/easywp /usr/local/bin/ewp
         chmod +x /usr/local/bin/ewp
 fi
-echo -e "\033[31mchecking ewp timestamp...\e[0m]"
+echo -e "\033[31mchecking ewp timestamp...\e[0m"
 if [ "/usr/local/ewp" -ot "usr/local/bin/easywp" ]
 then
     echo -e "\033[31mTimestamp is older, updating...\e[0m" | tee -ai $INSTALLLOG
