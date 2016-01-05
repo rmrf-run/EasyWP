@@ -152,7 +152,7 @@ SETUPDOMAINNOSSL()
 
 	# Setup WordPress Webroot & Database
 	EEWPSETUPNOSSL
-	EEWPDBSETUP
+	EEWPDBSETUPNOSSL
 }
 EEDOMAINSETUP()
 {
@@ -323,7 +323,7 @@ EEWPDBSETUP()
 	if [[ $WPADMINUSER = "" ]]
 	then
 		read -p "Enter admin account username (do not use admin or root): " WPADMINUSER
-			if [[ $WPADMINUSER = "admin"  ||  $WPADMINUSER = "root"  ||  $WPADMINUSER = "Admin"  ||  $WPADMINUSER = "Root" ]]
+			if [[ $WPADMINUSER = "admin"  ||  $WPADMINUSER = "root"  ||  $WPADMINUSER = "Admin"  ||  $WPADMINUSER = "Root" ||  $WPADMINUSER = "" ]]
 				then
 					read -p "Enter admin account username (IT IS SUGGESTED TO NOT USE ADMIN OR ROOT): " WPADMINUSER
 				if [[ $WPADMINUSER = "admin"  ||  $WPADMINUSER = "root"  ||  $WPADMINUSER = "Admin"  ||  $WPADMINUSER = "Root" ]]
@@ -370,7 +370,7 @@ EEWPDBSETUPNOSSL()
 	if [[ $WPADMINUSER = "" ]]
 	then
 		read -p "Enter admin account username (do not use admin or root): " WPADMINUSER
-			if [[ $WPADMINUSER = "admin"  ||  $WPADMINUSER = "root"  ||  $WPADMINUSER = "Admin"  ||  $WPADMINUSER = "Root" ]]
+			if [[ $WPADMINUSER = "admin"  ||  $WPADMINUSER = "root"  ||  $WPADMINUSER = "Admin"  ||  $WPADMINUSER = "Root" ||  $WPADMINUSER = "" ]]
 				then
 					read -p "Enter admin account username (IT IS SUGGESTED TO NOT USE ADMIN OR ROOT): " WPADMINUSER
 				if [[ $WPADMINUSER = "admin"  ||  $WPADMINUSER = "root"  ||  $WPADMINUSER = "Admin"  ||  $WPADMINUSER = "Root" ]]
@@ -712,7 +712,7 @@ else [ "$1" = "site" ]
 		echo
 		echo -e "\033[37mWordPress Admin Username: $WPADMINUSER\e[0m"
 		echo -e "\033[37mWordPress Admin Password: $WPADMINPASS\e[0m"
-		echo -e "\033[37mSuccessfully Created New Website: https://$DOMAIN\e[0m"
+		echo -e "\033[37mSuccessfully Created New Website: http://$DOMAIN\e[0m"
                 echo -e "\033[37mA copy of this info is located one level up from htdocs in $DOMAIN.info\e[0m"
                 echo -e "WordPress Admin Username: $WPADMINUSER \nWordPress Admin Password: $WPADMINPASS \nSuccessfully Created New Website: http://$WWWDOMAIN \nLogin at http://$WWWDOMAIN/wp-admin " >> /var/www/$DOMAIN/$DOMAIN.info
 
