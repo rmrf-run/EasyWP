@@ -8,12 +8,13 @@ Created to easily install WordPress on VPS running CentOS 7.x, with php 7, mysql
 * wpcli
 * LetsEncrypt SSL by default
 * http2
+
 ## Items still todo
 
 * Lets Encrypt cert renewal
 * ~~Site removal, disable, and re enable~~
 * Updating of ewp without running install
-* Add ability to create non-ssl WordPress site
+* ~~Add ability to create non-ssl WordPress site~~
 
 
 ## Install
