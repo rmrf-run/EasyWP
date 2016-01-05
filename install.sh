@@ -123,6 +123,12 @@ then
 	yum install -y http://dev.mysql.com/get/mysql-community-release-el7-5.noarch.rpm &>> $INSTALLLOG
         yum install -y mysql mysql-server &>> $INSTALLLOG || OwnError "Check log for error"
 fi
+echo -e "\033[36mChecking for Nginx Repo\e[0m"
+if [ ! -f  /etc/yum.repos.d/nginx.repo ]
+then
+	echo -e "\033[31mNginx Repo not found, installing repo...\e[0m" | tee -ai $INSTALLLOG
+	cp nginx.repo /etc/yum.repos.d/nginx.repo &>> $INSTALLLOG || OwnError "Check log for error"
+fi
 echo -e "\033[36mChecking for PHP7\e[0m"
 if [ ! -x  /usr/bin/php ]
 then
