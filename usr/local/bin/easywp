@@ -651,8 +651,8 @@ else [ "$1" = "site" ]
 		# Reload Nginx Configuration
 		systemctl restart nginx
 
-	else [ "$2" = "disable" ]
-		# Check SITENAME Is Empty Or Not
+    elif [ "$2" = "disable" ]
+    then		# Check SITENAME Is Empty Or Not
 		SITENAMECHECK=$3
 		EESITENAME
 
