@@ -151,8 +151,10 @@ echo -e "\033[36mChecking for wp-cli\e[0m"
 if [ ! -x  /usr/local/bin/wp ]
 then
 	echo -e "\033[31mWpcli not found, installing...\e[0m" | tee -ai $INSTALLLOG
-	cp usr/share/easywp/wp /usr/local/bin/wp
-        chmod +x /usr/local/bin/wp
+	#cp usr/share/easywp/wp /usr/local/bin/wp
+        #chmod +x /usr/local/bin/wp
+        #Pulling latest
+        curl -kL https://raw.github.com/wp-cli/builds/gh-pages/phar/wp-cli.phar > wp-cli.phar && chmod +x wp-cli.phar && mv wp-cli.phar /usr/local/bin/wp &>> $INSTALLLOG || OwnError "Unable To Install WP-CLI"
 fi
 
 echo -e "\033[36mChecking for ewp\e[0m"
