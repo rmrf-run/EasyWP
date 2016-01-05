@@ -210,12 +210,12 @@ EEDOMAINSETUPNOSSL()
 		echo -e "\033[36mCreating $DOMAIN, Please Wait...\e[0m"
 		sed "s/example.com/$DOMAIN/g" \
 		/etc/easywp/nginx/conf/wp/basic-nossl.conf \
-		> /etc/nginx/conf.d/$DOMAIN-nossl.conf \
+		> /etc/nginx/conf.d/$DOMAIN.conf \
 		|| OwnError "Unable To Create Nginx Configuration File For $DOMAIN"
 
 		# Creating Htdocs & Logs Directory
 		echo -e "\033[36mCreating htdocs & logs Directory\e[0m"
-		mkdir -p /var/www/$DOMAIN-nossl/htdocs \
+		mkdir -p /var/www/$DOMAIN/htdocs \
 		|| OwnError "Unable To Create htdocs & logs Directory"
 	else
 		OwnError "$DOMAIN Already Exist"
