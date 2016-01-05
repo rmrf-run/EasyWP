@@ -647,8 +647,8 @@ else [ "$1" = "site" ]
     then
     SITENAMECHECK=$3
     #EESITECREATE=$4
-    WPCACHEOPTION=$4
-    NOSSL=$5
+    WPCACHEOPTION=$5
+    NOSSL=$4
                 #COMMENTING OUT INCASE WE WANT TO ADD MORE CMSES, FOR NOW ONLY WORDPRESS
 		# USE DEFAULT WHEN POSSIBLES
 		# ee site create example.com
@@ -663,7 +663,7 @@ else [ "$1" = "site" ]
 		#fi
 		#elif [ "$EESITECREATE" = "--wp" ]
 		#then
-	if [ "$WPCACHEOPTION" = "" ]
+	if [ "$WPCACHEOPTION" = "" ] && [ "$NOSSL" != "--no-ssl" ] && [ "$NOSSL" != "--nossl" ]
 	then
         	# Configure Variable
         	NGINXCONF=/etc/easywp/nginx/conf/wp/basic.conf
@@ -679,7 +679,7 @@ else [ "$1" = "site" ]
 		echo -e "\033[37mSuccessfully Created New Website: https://$DOMAIN\e[0m"
                 echo -e "\033[37mA copy of this info is located one level up from htdocs in $DOMAIN.info\e[0m"
                 echo -e "WordPress Admin Username: $WPADMINUSER \nWordPress Admin Password: $WPADMINPASS \nSuccessfully Created New Website: https://$WWWDOMAIN \nLogin at https://$WWWDOMAIN/wp-admin " >> /var/www/$DOMAIN/$DOMAIN.info
-	elif [ "$WPCACHEOPTION" = "--redis" ] #REVIST TO INSTALL REDIS CACHING
+	elif [ "$WPCACHEOPTION" = "--redis" ] && [ "$NOSSL" != "--no-ssl" ] && [ "$NOSSL" != "--nossl" ]#REVIST TO INSTALL REDIS CACHING
         then       	# Configure Variable
         	NGINXCONF=/etc/easywp/nginx/wp/basic.conf
 		echo -e "SITENAMECHECK = $SITENAMECHECK \nEESITECREATE = $EESITECREATE \nWPCACHEOPTION = $WPCACHEOPTION \nNETWORKACTIVATE = $NETWORKACTIVATE \nWPSUBDOMAINS = $WPSUBDOMAINS \nNGINXCONF = $NGINXCONF" &>> $INSTALLLOG
@@ -699,7 +699,7 @@ else [ "$1" = "site" ]
 		# Display Success Message
 		echo
 		echo -e "\033[37mSuccessfully Created New Website: http://$WWWDOMAIN\e[0m"
-        elif [ "$NOSSL" = "--nossl" ] || [ "$NOSSL" = "--no-ssl" ]
+        elif [ "$NOSSL" = "--nossl" ] || [ "$NOSSL" = "--no-ssl" ] && [ "$WPCACHEOPTION" != "--redis" ] 
 	then
         	# Configure Variable
         	NGINXCONF=/etc/easywp/nginx/conf/wp/basic.conf
