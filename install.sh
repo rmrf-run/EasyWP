@@ -158,10 +158,17 @@ fi
 echo -e "\033[36mChecking for ewp\e[0m"
 if [ ! -x  /usr/local/bin/ewp ]
 then
-	echo -e "\033[31mWpcli not found, installing...\e[0m" | tee -ai $INSTALLLOG
+	echo -e "\033[31mewp not found, installing...\e[0m" | tee -ai $INSTALLLOG
 	cp usr/local/bin/easywp /usr/local/bin/ewp
         chmod +x /usr/local/bin/ewp
 fi
+echo -e "\033[31mchecking ewp timestamp...\e[0m]"
+if [ "/usr/local/ewp" -ot "usr/local/bin/easywp"]
+    echo -e "\033[31mTimestamp is older, updating...\e[0m" | tee -ai $INSTALLLOG
+    cp usr/local/bin/easywp /usr/local/bin/ewp
+    chmod +x /usr/local/bin/ewp
+fi
+
 function COMMONNGINX()
 {
 	# Personal Settings For Nginx
@@ -291,8 +298,13 @@ fi
 echo -e "\033[36mCopying easywp files to /etc/easywp/nginx\e[0m"
 if [ ! -d /etc/easywp/nginx/conf ]
 	then
-		mkdir -p /etc/easywp/nginx/conf || OwnError "Unable To Create /etc/nginx/conf.d"
+		mkdir -p /etc/easywp/nginx/conf || OwnError "Unable To Create /etc/easywp/nginx/conf"
                 cp -R usr/share/easywp/nginx/* /etc/easywp/nginx/conf
+fi
+echo -e "\033[36mChecking for directory to throw disabled confs in \e[0m"
+if [ ! -d /etc/easywp/disabled/ ]
+	then
+		mkdir -p /etc/easywp/disabled || OwnError "Unable To Create /etc/easywp/disabled"
 fi
 echo -e "\033[36mCloning letsencrypt to /etc/letsencrypt\e[0m"
 if [ ! -d /etc/letsencrypt ]

@@ -643,27 +643,27 @@ else [ "$1" = "site" ]
 	fi
     fi
 fi
-#	elif [ "$2" = "enable" ]
-#       then
-#
-#		# Check SITENAME Is Empty Or Not
-#		SITENAMECHECK=$3
-#		EESITENAME
-#	    mv /usr/share/easyengine/disabled-sites/$DOMAIN.conf /etc/nginx/conf.d/$DOMAIN.conf || OwnError "Unable To move conf file For $DOMAIN"
+    elif [ "$2" = "enable" ]
+       then
+
+		# Check SITENAME Is Empty Or Not
+		SITENAMECHECK=$3
+		EESITENAME
+                mv /etc/easywp/disabled/$DOMAIN.conf /etc/nginx/conf.d/$DOMAIN.conf || OwnError "Unable To move conf file For $DOMAIN"
+		# Reload Nginx Configuration
+		systemctl restart nginx
+
+	else [ "$2" = "disable" ]
+		# Check SITENAME Is Empty Or Not
+		SITENAMECHECK=$3
+		EESITENAME
+
+		echo -e "\033[36mRemoving conf file $DOMAIN\e[0m"
+		mv /etc/nginx/conf.d/$DOMAIN.conf /etc/easywp/disabled/$DOMAIN.conf	|| OwnError "Unable To Move conf file For $DOMAIN"
+
 #		# Reload Nginx Configuration
-#		NGINXRELOAD
-#
-#	else [ "$2" = "disable" ]
-#		# Check SITENAME Is Empty Or Not
-#		SITENAMECHECK=$3
-#		EESITENAME
-#
-#		echo -e "\033[36mRemoving conf file $DOMAIN\e[0m"
-#		mv /etc/nginx/conf.d/$DOMAIN.conf /usr/share/easyengine/disabled-sites/$DOMAIN.conf	|| OwnError "Unable To Move conf file For $DOMAIN"
-#
-#		# Reload Nginx Configuration
-#		NGINXRELOAD
- #   fi
+		systemctl restart nginx
+   fi
 }
 
 EasyWP $@ | tee -ai $INSTALLLOG
