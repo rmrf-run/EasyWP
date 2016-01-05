@@ -175,7 +175,7 @@ EEDOMAINSETUP()
 EEDOMAINSSLRENEW()
 {
     echo -e "\033[36mRenewing ssl cert, Please Wait...\e[0m"
-    /etc/letsencrypt/letsencrypt-auto certonly -a webroot --webroot-path /var/www/$DOMAIN/htdocs -d $DOMAIN
+    /etc/letsencrypt/letsencrypt-auto certonly --standalone -d $DOMAIN -d www.$DOMAIN
 
     if [ $? -ne 0 ]
      then
@@ -619,7 +619,7 @@ else [ "$1" = "site" ]
 		echo -e "\033[37mWordPress Admin Password: $WPADMINPASS\e[0m"
 		echo -e "\033[37mSuccessfully Created New Website: https://$DOMAIN\e[0m"
                 echo -e "\033[37mA copy of this info is located one level up from htdocs in $DOMAIN.info\e[0m"
-                echo "WordPress Admin Username: $WPADMINUSER \n WordPress Admin Password: $WPADMINPASS \nSuccessfully Created New Website: https://$WWWDOMAIN \n Login at https://$WWWDOMAIN/wp-admin " >> /var/www/$DOMAIN/$DOMAIN.info
+                echo -e "WordPress Admin Username: $WPADMINUSER \nWordPress Admin Password: $WPADMINPASS \nSuccessfully Created New Website: https://$WWWDOMAIN \nLogin at https://$WWWDOMAIN/wp-admin " >> /var/www/$DOMAIN/$DOMAIN.info
 	else [ "$WPCACHEOPTION" = "--redis" ] #REVIST TO INSTALL REDIS CACHING
                	# Configure Variable
         	NGINXCONF=/etc/easywp/nginx/wp/basic.conf
