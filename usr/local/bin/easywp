@@ -650,6 +650,7 @@ else [ "$1" = "site" ]
                 
                 echo -e "\033[36mMoving conf file $DOMAIN\e[0m"
                 mv /etc/easywp/disabled/$DOMAIN.conf /etc/nginx/conf.d/$DOMAIN.conf || OwnError "Unable To move conf file For $DOMAIN"
+                echo -e "\033[36mRestarting Nginx\e[0m"
 		# Reload Nginx Configuration
 		systemctl restart nginx
 
@@ -660,7 +661,7 @@ else [ "$1" = "site" ]
 
 		echo -e "\033[36mRemoving conf file $DOMAIN\e[0m"
 		mv /etc/nginx/conf.d/$DOMAIN.conf /etc/easywp/disabled/$DOMAIN.conf	|| OwnError "Unable To Move conf file For $DOMAIN"
-
+                echo -e "\033[36mRestarting Nginx\e[0m"
 #		# Reload Nginx Configuration
 		systemctl restart nginx
    fi
