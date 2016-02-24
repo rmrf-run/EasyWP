@@ -136,7 +136,7 @@ SETUPDOMAIN()
 	EESITENAME
 
 	# Creating Website $DOMAIN
-	EEDOMAINSETUP
+	EEDOMAINSETUPNOSSL
 
 	# Setup WordPress Webroot & Database
 	EEWPSETUP
@@ -164,7 +164,7 @@ EEDOMAINSETUP()
 		# Creating Website $DOMAIN
 		echo -e "\033[36mCreating $DOMAIN, Please Wait...\e[0m"
 		sed "s/example.com/$DOMAIN/g" \
-		/etc/easywp/nginx/conf/wp/basic.conf \
+		/etc/easywp/nginx/conf/wp/basic-nossl.conf \
 		> /etc/nginx/conf.d/$DOMAIN.conf \
 		|| OwnError "Unable To Create Nginx Configuration File For $DOMAIN"
 
@@ -173,11 +173,14 @@ EEDOMAINSETUP()
 		mkdir -p /var/www/$DOMAIN/htdocs \
 		|| OwnError "Unable To Create htdocs & logs Directory"
                 #LetsEncrypt
-                echo -e "\033[36mLets get some nice and shiny new SSL Certs for free from Lets Encrypt, ssl certs for $DOMAIN. \e[0m": 
+#                echo -e "\033[36mLets get some nice and shiny new SSL Certs for free from Lets Encrypt, ssl certs for $DOMAIN. \e[0m": 
 #                systemctl stop nginx
 #                /etc/letsencrypt/letsencrypt-auto certonly --standalone -d $DOMAIN -d www.$DOMAIN
-                /etc/letsencrypt/letsencrypt-auto certonly --webroot --webroot-path /var/www/$DOMAIN/htdocs/ --email $WPADMINEMAIL --text --agree-tos -d $DOMAIN -d www.$DOMAIN
-                systemctl restart nginx
+#		echo -e "\033[31mI need your email address to create valid SSL request. We are using the webroot method:\e[0m"
+#		read EMAIL
+
+#               /etc/letsencrypt/letsencrypt-auto certonly --webroot --webroot-path /var/www/$DOMAIN/htdocs/ --email $EMAIL --text --agree-tos -d $DOMAIN -d www.$DOMAIN
+#                systemctl restart nginx
         else
 		OwnError "$DOMAIN Already Exist"
 	fi
@@ -185,6 +188,35 @@ EEDOMAINSETUP()
         #FOR TESTING LETS ADD NOSSL CONF FILE IN
         
 }
+
+EEDOMAINSSLSETUP()
+{
+#### MOVING TO LAST FUNCTION SO ANY NEW SITES WILL GO THROUGH WITH NO PROBLEM
+		systemctl restart nginx
+		#restart nginx to load site in port 80
+		echo -e "\033[36mLets get some nice and shiny new SSL Certs for free from Lets Encrypt, ssl certs for $DOMAIN. \e[0m"
+                echo -e "\033[31mI need your email address to create valid SSL request. We are using the webroot method: \e[0m"
+                read EMAIL
+
+                /etc/letsencrypt/letsencrypt-auto certonly --webroot --webroot-path /var/www/$DOMAIN/htdocs/ --email $EMAIL --text --agree-tos -d $DOMAIN -d www.$DOMAIN
+		#Copy over SSL Conf to Nginx directory - Need to bring up site on port 80 first to verify with lets encrypt then replace conf with SSL conf
+		rm -f /etc/nginx/conf.d/$DOMAIN
+
+		sed "s/example.com/$DOMAIN/g" \
+                /etc/easywp/nginx/conf/wp/basic.conf \
+                > /etc/nginx/conf.d/$DOMAIN.conf \
+                || OwnError "Unable To Create Nginx Configuration File For $DOMAIN"
+		#run nginx -t to verify configuration
+               	nginx -t &> nginxStat
+		if grep -q failed nginxStat; then
+			echo -e "\033[36mNginx config failed you can view the file nginxStat for reason why or run nginx -t \e[0m" 
+		else
+			echo -e "\033[36mRestarting Nginx to apply SSL confs\e[0m"
+			systemctl restart nginx
+		fi
+
+}
+
 EEDOMAINSSLRENEW()
 {
     echo -e "\033[36mRenewing ssl cert, Please Wait...\e[0m"
@@ -559,7 +591,7 @@ EEPERMISSION()
 	echo -e "\033[36mChanging Ownership\e[0m"
 	chown -R nginx:nginx /var/www/$DOMAIN/ || OwnError "Unable To Change Ownership For $DOMAIN"
         #SeLinux, because why not have it all correct
-        echo -e "\033[36mChanging file context for Selinux so you can update, install, and plugins and core...Might take a min\e[0m"
+        echo -e "\033[36mChanging file context for Selinux so you can update and install plugins and core...Might take a min\e[0m"
         semanage fcontext -a -t httpd_sys_rw_content_t "/var/www/$DOMAIN/htdocs/wp-content(/.*)?"
         setsebool -P httpd_execmem 1
         echo -e "\033[36mRunning Restorecon to add file context changes to table...This will take a min, check install log for details\e[0m"
@@ -673,6 +705,8 @@ else [ "$1" = "site" ]
 		SETUPDOMAIN
 		HELPER
 		EEPERMISSION
+		# New position for Lets Encrypt
+		EEDOMAINSSLSETUP
 		# Display Success Message
 		echo
 		echo -e "\033[37mWordPress Admin Username: $WPADMINUSER\e[0m"

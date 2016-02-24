@@ -1,0 +1,2 @@
+nginx: [emerg] unexpected "{" in /etc/nginx/conf.d/break.conf:1
+nginx: configuration file /etc/nginx/nginx.conf test failed
