@@ -173,9 +173,10 @@ EEDOMAINSETUP()
 		mkdir -p /var/www/$DOMAIN/htdocs \
 		|| OwnError "Unable To Create htdocs & logs Directory"
                 #LetsEncrypt
-                echo -e "\033[36mLets get some nice and shiny new SSL Certs for free from Lets Encrypt, ssl certs for $DOMAIN. We will stop Nginx for a few seconds to authorize\e[0m": 
-                systemctl stop nginx
-                /etc/letsencrypt/letsencrypt-auto certonly --standalone -d $DOMAIN -d www.$DOMAIN
+                echo -e "\033[36mLets get some nice and shiny new SSL Certs for free from Lets Encrypt, ssl certs for $DOMAIN. \e[0m": 
+#                systemctl stop nginx
+#                /etc/letsencrypt/letsencrypt-auto certonly --standalone -d $DOMAIN -d www.$DOMAIN
+                /etc/letsencrypt/letsencrypt-auto certonly --webroot --webroot-path /var/www/$DOMAIN/htdocs/ --email $WPADMINEMAIL --text --agree-tos -d $DOMAIN -d www.$DOMAIN
                 systemctl restart nginx
         else
 		OwnError "$DOMAIN Already Exist"
@@ -187,8 +188,8 @@ EEDOMAINSETUP()
 EEDOMAINSSLRENEW()
 {
     echo -e "\033[36mRenewing ssl cert, Please Wait...\e[0m"
-    /etc/letsencrypt/letsencrypt-auto certonly --standalone -d $DOMAIN -d www.$DOMAIN
-
+#    /etc/letsencrypt/letsencrypt-auto certonly --standalone -d $DOMAIN -d www.$DOMAIN
+    /etc/letsencrypt/letsencrypt-auto renew
     if [ $? -ne 0 ]
      then
             ERRORLOG=`tail /var/log/letsencrypt/letsencrypt.log`
